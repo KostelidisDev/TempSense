@@ -27,13 +27,15 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <Arduino_JSON.h>
+#include <DallasTemperature.h>
+#include <OneWire.h>
 
 #ifndef MONITOR_BAUD
 #define MONITOR_BAUD 9600
 #endif
 
 #ifndef HTTP_DOMAIN
-#define HTTP_DOMAIN "NodeSense-DEV"
+#define HTTP_DOMAIN "TempSense-DEV"
 #endif
 
 #ifndef HTTP_PORT
@@ -49,7 +51,11 @@
 #endif
 
 #ifndef SENSOR_TYPE
-#define SENSOR_TYPE "Template"
+#define SENSOR_TYPE "Temperature"
+#endif
+
+#ifndef ONE_WIRE_BUS
+#define ONE_WIRE_BUS 4
 #endif
 
 auto DEVICE_SERIAL_BAUD = MONITOR_BAUD;
@@ -60,13 +66,19 @@ auto WIFI_SSID_PASSWORD = SSID_PASSWORD;
 
 ESP8266WebServer server(DEVICE_HTTP_PORT);
 
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
 void handleStatus();
 void handleData();
 void handleNotFound();
+int32_t getTempByIndex(uint8_t deviceIndex);
 
 void setup()
 {
     Serial.begin(DEVICE_SERIAL_BAUD);
+
+    sensors.begin();
 
     Serial.println("");
     Serial.println(WIFI_SSID_NAME);
@@ -123,14 +135,22 @@ void handleStatus()
 
 void handleData()
 {
+    sensors.requestTemperatures();
+    const int32_t temperatureRaw = getTempByIndex(0);
+    const float temperatureC = sensors.getTempCByIndex(0);
+    const float temperatureF = sensors.getTempFByIndex(0);
+
     JSONVar json;
 
     json["message"] = "OK";
     json["status"] = "200";
 
-    json["raw"] = nullptr;
+    json["raw"] = temperatureRaw;
 
-    json["processed"] = nullptr;
+    JSONVar processed;
+    processed["celsius"] = temperatureC;
+    processed["fahrenheit"] = temperatureF;
+    json["processed"] = processed;
 
     const String jsonResponse = JSON.stringify(json);
 
@@ -147,4 +167,13 @@ void handleNotFound()
     const String jsonResponse = JSON.stringify(json);
 
     server.send(200, "application/json", jsonResponse);
+}
+
+int32_t getTempByIndex(const uint8_t deviceIndex) {
+
+    DeviceAddress deviceAddress;
+    if (!sensors.getAddress(deviceAddress, deviceIndex)) {
+        return DEVICE_DISCONNECTED_C;
+    }
+    return sensors.getTemp((uint8_t*) deviceAddress);
 }
