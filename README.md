@@ -1,7 +1,6 @@
-# NodeSense
+# TempSense
 
-A template project designed for IoT applications using NodeMCU. It provides a modular and reusable base for integrating sensors and devices, making it easier to kickstart IoT projects.
-
+TempSense is an IoT project based on the NodeSense framework that integrates a temperature sensor.
 # License
 
 [MIT License](./LICENSE)
