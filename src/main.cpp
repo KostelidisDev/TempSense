@@ -80,11 +80,6 @@ void setup()
 
     sensors.begin();
 
-    Serial.println("");
-    Serial.println(WIFI_SSID_NAME);
-    Serial.println(WIFI_SSID_PASSWORD);
-    Serial.println("");
-
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID_NAME, WIFI_SSID_PASSWORD);
     WiFi.hostname(DEVICE_HTTP_DOMAIN);
